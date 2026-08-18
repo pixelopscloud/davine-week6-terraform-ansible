@@ -8,3 +8,7 @@ terraform/terraform.tfvars
 # SSH keys
 *.pem
 *.key
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+.terraform/
+*.pem
