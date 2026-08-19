@@ -3,21 +3,118 @@
   hosts: web
   become: true
 
+  vars:
+    app_user: devops
+    required_packages:
+      - httpd
+      - wget
+      - git
+      - unzip
+
   tasks:
 
-    - name: Create devops user
+    # -------------------------------
+    # Application User
+    # -------------------------------
+    - name: Create application user
       user:
-        name: devops
+        name: "{{ app_user }}"
         state: present
         create_home: true
+        shell: /bin/bash
 
-    - name: Install httpd
+    # -------------------------------
+    # Required Packages
+    # -------------------------------
+    - name: Install required packages
       yum:
-        name: httpd
+        name: "{{ required_packages }}"
         state: present
 
-    - name: Start and enable httpd
+    # -------------------------------
+    # Web Server Setup
+    # -------------------------------
+    - name: Deploy branded index.html
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Davine Technologies | DevOps Week 6</title>
+            <style>
+              body {
+                margin: 0;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                background: linear-gradient(135deg, #1e3c72, #2a5298);
+                color: #ffffff;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                text-align: center;
+              }
+              .card {
+                background: rgba(255,255,255,0.1);
+                padding: 50px 70px;
+                border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                backdrop-filter: blur(6px);
+              }
+              h1 {
+                font-size: 2.5rem;
+                margin-bottom: 10px;
+                color: #ffd700;
+              }
+              h2 {
+                font-size: 1.3rem;
+                font-weight: 400;
+                margin: 5px 0;
+              }
+              .badge {
+                margin-top: 25px;
+                display: inline-block;
+                padding: 8px 20px;
+                background: #ffd700;
+                color: #1e3c72;
+                border-radius: 20px;
+                font-weight: bold;
+              }
+              p {
+                margin-top: 20px;
+                font-size: 0.95rem;
+                opacity: 0.85;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h1>Davine Technologies</h1>
+              <h2>DevOps Internship &mdash; Week 6</h2>
+              <h2>Muhammad Ali &bull; Junior DevOps Engineer</h2>
+              <div class="badge">Server Configured Successfully via Ansible</div>
+              <p>Provisioned by Terraform &nbsp;|&nbsp; Configured by Ansible</p>
+            </div>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: apache
+        group: apache
+        mode: '0644'
+
+    # -------------------------------
+    # Service Configuration
+    # -------------------------------
+    - name: Start and enable httpd service
       service:
         name: httpd
         state: started
         enabled: true
+
+    - name: Ensure firewalld allows HTTP (if firewalld installed)
+      firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+      ignore_errors: true
